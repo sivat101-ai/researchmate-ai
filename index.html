@@ -189,7 +189,6 @@
   .checkbox-item.checked { border-color: var(--accent); background: rgba(79,156,249,0.08); color: var(--accent); }
   .checkbox-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); transition: background 0.2s; }
   .checkbox-item.checked .dot { background: var(--accent); }
-  .slider-wrap { display: flex; flex-direction: column; gap: 8px; }
   .slider-row { display: flex; align-items: center; gap: 12px; }
   input[type="range"] { flex: 1; -webkit-appearance: none; height: 4px; background: var(--border2); border-radius: 2px; outline: none; }
   input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--accent); border-radius: 50%; cursor: pointer; box-shadow: 0 0 8px rgba(79,156,249,0.4); }
@@ -245,32 +244,11 @@
   .stat-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 36px; color: var(--accent); line-height: 1; margin-bottom: 6px; }
   .stat-label { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
   .download-row { display: flex; gap: 10px; flex-wrap: wrap; padding: 20px 24px; border-top: 1px solid var(--border); }
-  .about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
   .about-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
   .about-card .icon { font-size: 24px; margin-bottom: 12px; }
   .about-card h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 8px; color: var(--text); }
   .about-card p { font-size: 11px; color: var(--text3); line-height: 1.7; }
-  .config-bar {
-    background: rgba(245,200,66,0.05); border: 1px solid rgba(245,200,66,0.2);
-    border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  .config-bar .warn-icon { font-size: 16px; flex-shrink: 0; }
-  .config-bar p { font-size: 12px; color: var(--gold); flex: 1; min-width: 200px; }
-  .config-bar input {
-    flex: 2; min-width: 280px; background: var(--surface2);
-    border: 1px solid rgba(245,200,66,0.3); border-radius: 8px;
-    padding: 8px 14px; color: var(--gold);
-    font-family: 'DM Mono', monospace; font-size: 11px; outline: none;
-  }
-  .config-bar input:focus { border-color: var(--gold); }
-  .config-btn {
-    padding: 8px 16px; background: rgba(245,200,66,0.1);
-    border: 1px solid rgba(245,200,66,0.3); border-radius: 8px;
-    color: var(--gold); font-size: 11px; cursor: pointer;
-    font-family: 'DM Mono', monospace; transition: all 0.2s;
-  }
-  .config-btn:hover { background: rgba(245,200,66,0.2); }
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
   .empty-state .big-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
   .empty-state p { font-size: 13px; }
@@ -302,7 +280,9 @@ const EXAMPLES = [
   "Deep learning approaches in drug discovery",
   "Mental health interventions via mobile apps",
 ];
-const DEFAULT_URL = "https://cloud.flowiseai.com/api/v1/prediction/d9ede6a3-19e7-4b64-95af-5ac4adb1fbf9"
+
+const FLOWISE_URL = "https://cloud.flowiseai.com/api/v1/prediction/d9ede6a3-19e7-4b64-95af-5ac4adb1fbf9";
+const FLOWISE_KEY = "fu9CgvZmwCuGCU2Mr1raCQsxBS98pbbYGT6HQq13u4k";
 
 function PipelineViz({ activeAgent, doneAgents }) {
   return (
@@ -332,9 +312,6 @@ function App() {
   const [yearFrom, setYearFrom] = useState("2019");
   const [yearTo, setYearTo] = useState("2025");
   const [citFormat, setCitFormat] = useState("APA");
-  const [flowiseUrl, setFlowiseUrl] = useState(DEFAULT_URL);
-  const [tempUrl, setTempUrl] = useState(DEFAULT_URL);
-  const [urlSaved, setUrlSaved] = useState(false);
   const [running, setRunning] = useState(false);
   const [activeAgent, setActiveAgent] = useState(null);
   const [doneAgents, setDoneAgents] = useState([]);
@@ -354,7 +331,6 @@ function App() {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [logs]);
 
-  const saveUrl = () => { setFlowiseUrl(tempUrl); setUrlSaved(true); setTimeout(() => setUrlSaved(false), 2000); };
   const toggleDb = (db) => setDatabases(prev => ({ ...prev, [db]: !prev[db] }));
 
   const simulateAgent = (idx) => new Promise(res => {
@@ -374,8 +350,8 @@ function App() {
 
   const runPipeline = async () => {
     if (!question.trim()) return;
-    if (flowiseUrl === DEFAULT_URL) { addLog("⚠️","Please set your Flowise API URL first!","warn"); return; }
-    setRunning(true); setResult(null); setDoneAgents([]); setActiveAgent(null); setLogs([]); setProgress(0);
+    setRunning(true); setResult(null); setDoneAgents([]);
+    setActiveAgent(null); setLogs([]); setProgress(0);
     addLog("🚀", "Starting ResearchMate AI pipeline", "highlight");
     addLog("📋", `Query: "${question}"`, "");
     addLog("🗄️", `Databases: ${[databases.arxiv&&"arXiv",databases.scholar&&"Google Scholar"].filter(Boolean).join(", ")}`, "");
@@ -384,24 +360,34 @@ function App() {
       for (let i = 0; i < AGENTS.length - 1; i++) {
         await simulateAgent(i);
         setDoneAgents(prev => [...prev, AGENTS[i].id]);
-        if (i === 1) addLog("✅","Quality gate passed — sufficient papers found","success");
-        if (i === 2) addLog("📌",`Top ${paperCount} papers selected by relevance score`,"success");
+        if (i === 1) addLog("✅", "Quality gate passed — sufficient papers found", "success");
+        if (i === 2) addLog("📌", `Top ${paperCount} papers selected by relevance score`, "success");
         await new Promise(r => setTimeout(r, 300));
       }
       setActiveAgent(8); setProgress(90);
-      addLog("🌐","Calling Flowise API...","highlight");
-      const payload = { question: `Research question: ${question}\n\nConfig:\n- Databases: ${[databases.arxiv&&"arXiv",databases.scholar&&"Google Scholar"].filter(Boolean).join(", ")}\n- Papers: ${paperCount}\n- Years: ${yearFrom}–${yearTo}\n- Citation format: ${citFormat}\n\nRun the full 8-agent pipeline and return a complete academic research report.` };
-      const res = await fetch(flowiseUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+      addLog("🌐", "Calling Flowise API...", "highlight");
+      const payload = {
+        question: `Research question: ${question}\n\nConfig:\n- Databases: ${[databases.arxiv&&"arXiv",databases.scholar&&"Google Scholar"].filter(Boolean).join(", ")}\n- Papers: ${paperCount}\n- Years: ${yearFrom}–${yearTo}\n- Citation format: ${citFormat}\n\nRun the full 8-agent pipeline and return a complete academic research report.`
+      };
+      const res = await fetch(FLOWISE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${FLOWISE_KEY}`
+        },
+        body: JSON.stringify(payload)
+      });
       if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
       const data = await res.json();
       const output = data.text || data.output || data.answer || JSON.stringify(data);
-      setDoneAgents(AGENTS.map(a => a.id)); setActiveAgent(null); setProgress(100);
-      addLog("✅","Pipeline complete!","success");
+      setDoneAgents(AGENTS.map(a => a.id));
+      setActiveAgent(null); setProgress(100);
+      addLog("✅", "Pipeline complete!", "success");
       setResult(output);
       setStats({ papers: paperCount, agents: 8, gaps: 3, score: Math.floor(Math.random()*2)+8 });
     } catch(err) {
-      addLog("❌",`Error: ${err.message}`,"err");
-      addLog("💡","Check your Flowise URL and ensure the pipeline is running","warn");
+      addLog("❌", `Error: ${err.message}`, "err");
+      addLog("💡", "Check your Flowise pipeline is active and API key is valid", "warn");
       setActiveAgent(null);
     } finally { setRunning(false); }
   };
@@ -409,12 +395,13 @@ function App() {
   const download = (fmt) => {
     if (!result) return;
     const ext = fmt === "md" ? "md" : fmt === "bib" ? "bib" : "txt";
-    const blob = new Blob([result], {type:"text/plain"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = `researchmate-report.${ext}`; a.click();
+    const blob = new Blob([result], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `researchmate-report.${ext}`;
+    a.click();
   };
 
-  const isDefaultUrl = flowiseUrl === DEFAULT_URL;
   return (
     <div>
       <header className="header">
@@ -434,47 +421,53 @@ function App() {
           <h1>Academic research,<br/><em>automated end-to-end</em></h1>
           <p>8 specialised AI agents search live databases, analyse papers, identify research gaps and generate a formatted academic report — fully autonomous.</p>
         </div>
-        {isDefaultUrl && (
-          <div className="config-bar">
-            <span className="warn-icon">⚙️</span>
-            <p>Paste your Flowise Cloud API endpoint to activate the pipeline</p>
-            <input type="text" placeholder="https://cloud.flowiseai.com/api/v1/prediction/YOUR-ID" value={tempUrl} onChange={e=>setTempUrl(e.target.value)}/>
-            <button className="config-btn" onClick={saveUrl}>{urlSaved?"✓ Saved":"Save URL"}</button>
-          </div>
-        )}
         <div className="pipeline-section">
           <div className="section-label">8-Agent Pipeline</div>
-          <PipelineViz activeAgent={activeAgent} doneAgents={doneAgents}/>
+          <PipelineViz activeAgent={activeAgent} doneAgents={doneAgents} />
         </div>
         <div className="form-card">
           <div className="section-label" style={{marginBottom:24}}>Research Configuration</div>
           <div className="field" style={{marginBottom:20}}>
             <label>Research Question</label>
-            <textarea placeholder="e.g. What are the most effective machine learning approaches for early detection of Alzheimer's disease?" value={question} onChange={e=>setQuestion(e.target.value)} rows={3}/>
+            <textarea
+              placeholder="e.g. What are the most effective machine learning approaches for early detection of Alzheimer's disease?"
+              value={question}
+              onChange={e => setQuestion(e.target.value)}
+              rows={3}
+            />
             <div className="example-pills">
               <span style={{fontSize:10,color:"var(--text3)"}}>Examples:</span>
-              {EXAMPLES.map(ex=><span key={ex} className="pill" onClick={()=>setQuestion(ex)}>{ex}</span>)}
+              {EXAMPLES.map(ex => (
+                <span key={ex} className="pill" onClick={() => setQuestion(ex)}>{ex}</span>
+              ))}
             </div>
           </div>
           <div className="form-grid">
             <div className="field">
               <label>Academic Databases</label>
               <div className="checkbox-group">
-                <div className={`checkbox-item ${databases.arxiv?"checked":""}`} onClick={()=>toggleDb("arxiv")}><span className="dot"/> arXiv</div>
-                <div className={`checkbox-item ${databases.scholar?"checked":""}`} onClick={()=>toggleDb("scholar")}><span className="dot"/> Google Scholar</div>
+                <div className={`checkbox-item ${databases.arxiv?"checked":""}`} onClick={() => toggleDb("arxiv")}>
+                  <span className="dot"/> arXiv
+                </div>
+                <div className={`checkbox-item ${databases.scholar?"checked":""}`} onClick={() => toggleDb("scholar")}>
+                  <span className="dot"/> Google Scholar
+                </div>
               </div>
             </div>
             <div className="field">
               <label>Citation Format</label>
-              <select value={citFormat} onChange={e=>setCitFormat(e.target.value)}>
-                <option>APA</option><option>Harvard</option><option>IEEE</option><option>MLA</option>
+              <select value={citFormat} onChange={e => setCitFormat(e.target.value)}>
+                <option>APA</option>
+                <option>Harvard</option>
+                <option>IEEE</option>
+                <option>MLA</option>
               </select>
             </div>
             <div className="field">
               <label>Number of Papers — <span style={{color:"var(--accent)"}}>{paperCount}</span></label>
               <div className="slider-row">
                 <span style={{fontSize:11,color:"var(--text3)"}}>5</span>
-                <input type="range" min={5} max={20} value={paperCount} onChange={e=>setPaperCount(+e.target.value)}/>
+                <input type="range" min={5} max={20} value={paperCount} onChange={e => setPaperCount(+e.target.value)}/>
                 <span style={{fontSize:11,color:"var(--text3)"}}>20</span>
                 <span className="slider-val">{paperCount}</span>
               </div>
@@ -482,25 +475,34 @@ function App() {
             <div className="field">
               <label>Year Range</label>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                <input type="text" value={yearFrom} onChange={e=>setYearFrom(e.target.value)} style={{flex:1}} placeholder="2019"/>
+                <input type="text" value={yearFrom} onChange={e => setYearFrom(e.target.value)} style={{flex:1}} placeholder="2019"/>
                 <span style={{color:"var(--text3)",fontSize:12}}>to</span>
-                <input type="text" value={yearTo} onChange={e=>setYearTo(e.target.value)} style={{flex:1}} placeholder="2025"/>
+                <input type="text" value={yearTo} onChange={e => setYearTo(e.target.value)} style={{flex:1}} placeholder="2025"/>
               </div>
             </div>
           </div>
-          <button className={`btn-primary ${running?"loading":""}`} onClick={runPipeline} disabled={running||!question.trim()}>
-            {running?`⚡ Running Pipeline — Agent ${activeAgent||"..."} of 8`:"🚀 Run Research Pipeline"}
+          <button
+            className={`btn-primary ${running?"loading":""}`}
+            onClick={runPipeline}
+            disabled={running || !question.trim()}
+          >
+            {running ? `⚡ Running Pipeline — Agent ${activeAgent||"..."} of 8` : "🚀 Run Research Pipeline"}
           </button>
         </div>
         {logs.length > 0 && (
           <div className="progress-card">
             <div className="progress-header">
-              <div className="progress-title">{running&&<span className="spinner"/>} Agent Activity Log</div>
+              <div className="progress-title">
+                {running && <span className="spinner"/>}
+                Agent Activity Log
+              </div>
               <span style={{fontSize:12,color:"var(--accent)"}}>{progress}%</span>
             </div>
-            <div className="progress-bar-wrap"><div className="progress-bar-fill" style={{width:`${progress}%`}}/></div>
+            <div className="progress-bar-wrap">
+              <div className="progress-bar-fill" style={{width:`${progress}%`}}/>
+            </div>
             <div className="log-scroll" ref={logRef}>
-              {logs.map(l=>(
+              {logs.map(l => (
                 <div key={l.id} className="log-line">
                   <span className="log-time">{l.time}</span>
                   <span className="log-icon">{l.icon}</span>
@@ -513,15 +515,15 @@ function App() {
         {result && (
           <div className="results-card">
             <div className="tabs">
-              {["report","stats","about"].map(t=>(
-                <div key={t} className={`tab ${activeTab===t?"active":""}`} onClick={()=>setActiveTab(t)}>
+              {["report","stats","about"].map(t => (
+                <div key={t} className={`tab ${activeTab===t?"active":""}`} onClick={() => setActiveTab(t)}>
                   {t==="report"?"📄 Full Report":t==="stats"?"📊 Statistics":"ℹ️ About"}
                 </div>
               ))}
             </div>
             <div className="results-body">
-              {activeTab==="report"&&<div className="report-text">{result}</div>}
-              {activeTab==="stats"&&stats&&(
+              {activeTab==="report" && <div className="report-text">{result}</div>}
+              {activeTab==="stats" && stats && (
                 <div className="stats-grid">
                   <div className="stat-card"><div className="stat-val">{stats.papers}</div><div className="stat-label">Papers Analysed</div></div>
                   <div className="stat-card"><div className="stat-val">{stats.agents}</div><div className="stat-label">AI Agents Run</div></div>
@@ -529,29 +531,38 @@ function App() {
                   <div className="stat-card"><div className="stat-val">{stats.score}<span style={{fontSize:20}}>/10</span></div><div className="stat-label">Quality Score</div></div>
                 </div>
               )}
-              {activeTab==="about"&&(
+              {activeTab==="about" && (
                 <div className="about-grid">
-                  {AGENTS.map(a=>(
+                  {AGENTS.map(a => (
                     <div key={a.id} className="about-card">
                       <div className="icon">{a.icon}</div>
                       <h4>Agent {a.id} — {a.label.replace("\n"," ")}</h4>
-                      <p>{["Searches arXiv and Google Scholar APIs simultaneously for live academic papers","Quality gate: triggers broader search if fewer than 3 papers are found","Scores each paper 1–10 for relevance and selects top results","Generates academic summaries covering objective, methodology and findings","Identifies research gaps, contradictions and future directions","Produces APA 7th edition annotated bibliography with key themes","Validates citation format, annotation quality and produces a quality score","Formats the complete analysis into a professional academic report"][a.id-1]}</p>
+                      <p>{[
+                        "Searches arXiv and Google Scholar APIs simultaneously for live academic papers",
+                        "Quality gate: triggers broader search if fewer than 3 papers are found",
+                        "Scores each paper 1–10 for relevance and selects top results",
+                        "Generates academic summaries covering objective, methodology and findings",
+                        "Identifies research gaps, contradictions and future directions",
+                        "Produces APA 7th edition annotated bibliography with key themes",
+                        "Validates citation format, annotation quality and produces a quality score",
+                        "Formats the complete analysis into a professional academic report"
+                      ][a.id-1]}</p>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            {activeTab==="report"&&(
+            {activeTab==="report" && (
               <div className="download-row">
                 <span style={{fontSize:11,color:"var(--text3)",alignSelf:"center"}}>Download:</span>
-                <button className="btn-outline" onClick={()=>download("txt")}>📄 TXT</button>
-                <button className="btn-outline" onClick={()=>download("md")}>📝 Markdown</button>
-                <button className="btn-outline" onClick={()=>download("bib")}>📚 Bibliography</button>
+                <button className="btn-outline" onClick={() => download("txt")}>📄 TXT</button>
+                <button className="btn-outline" onClick={() => download("md")}>📝 Markdown</button>
+                <button className="btn-outline" onClick={() => download("bib")}>📚 Bibliography</button>
               </div>
             )}
           </div>
         )}
-        {!result&&!running&&logs.length===0&&(
+        {!result && !running && logs.length===0 && (
           <div className="empty-state">
             <div className="big-icon">🔬</div>
             <p>Enter a research question above and run the pipeline to generate your academic report.</p>
