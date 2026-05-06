@@ -382,7 +382,7 @@ function App() {
       });
       if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
       const data = await res.json();
-      const output = data.text || data.output || data.answer || JSON.stringify(data);
+      const output = data.text || data.output || data.answer || data.json?.output || (typeof data === 'object' ? JSON.stringify(data,
       setDoneAgents(AGENTS.map(a => a.id));
       setActiveAgent(null); setProgress(100);
       addLog("✅", "Pipeline complete!", "success");
