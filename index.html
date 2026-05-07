@@ -369,8 +369,8 @@ function App() {
       }
       setActiveAgent(8); setProgress(90);
       addLog("🌐", "Calling Flowise API...", "highlight");
-      const payload = {
-        question: `Research question: ${question}\n\nConfig:\n- Databases: ${[databases.arxiv&&"arXiv",databases.scholar&&"Google Scholar"].filter(Boolean).join(", ")}\n- Papers: ${paperCount}\n- Years: ${yearFrom}–${yearTo}\n- Citation format: ${citFormat}\n\nRun the full 8-agent pipeline and return a complete academic research report.`
+     const payload = {
+        question: `${question}`
       };
       const res = await fetch(FLOWISE_URL, {
         method: "POST",
